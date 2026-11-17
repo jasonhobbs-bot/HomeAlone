@@ -564,6 +564,164 @@ function useFloor(level){
  sparks=[];
 }
 
+
+/* ARCHITECTURAL REALISM PASS — decorative meshes, no new collision barriers.
+   Work is intentionally limited to interior detailing so older puzzles stay reachable. */
+function dressArchitecturalRealism(m,level){
+ const upper=level===2,basement=level===0;
+ const trim=basement?'#77716a':upper?'#ddd2bd':'#e1d1b4';
+ const oak=basement?'#55565b':'#654632';
+ const walkable=(x,z)=>x>1&&z>1&&x<W-1&&z<H-1&&!solid(x,z);
+ // Long architectural baseboards + layered ceiling coves only on boundaries.
+ for(let z=1;z<H-1;z++)for(let x=1;x<W-1;x++){
+  if(!walkable(x,z))continue;
+  for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   if(!solid(x+dx,z+dz))continue;
+   const vertical=dx!==0,px=x+(dx===1?.975:dx===-1?.025:.5),pz=z+(dz===1?.975:dz===-1?.025:.5);
+   const l=1.01;
+   if(vertical){
+    m.box(px,.20,pz,.065,.36,l,'plain',oak);m.box(px,.42,pz,.095,.055,l,'plain',trim);
+    m.box(px,3.62,pz,.105,.18,l,'plain',trim);m.box(px,3.48,pz,.12,.045,l,'plain',oak);
+    if(!basement&&((x+z)%5===0))m.box(px,.81,pz,.072,.76,.48,'plain',trim);
+   }else{
+    m.box(px,.20,pz,l,.36,.065,'plain',oak);m.box(px,.42,pz,l,.055,.095,'plain',trim);
+    m.box(px,3.62,pz,l,.18,.105,'plain',trim);m.box(px,3.48,pz,l,.045,.12,'plain',oak);
+    if(!basement&&((x+z)%5===0))m.box(px,.81,pz,.48,.76,.072,'plain',trim);
+   }
+  }
+ }
+ if(basement){
+  // Cast-iron beams, horizontal ducting and a visibly complex furnace facade.
+  for(const zz of [4.4,12.6,21.8]){
+   m.box(18,3.53,zz,31,.30,.22,'plain','#4a5155');
+   m.box(18,3.68,zz,31,.08,.36,'plain','#84888a');
+  }
+  for(const xx of [4.0,14.8,25.9]){
+   m.box(xx,3.19,10,.40,.44,15.5,'plain','#777d7d');
+   m.box(xx,3.16,10,.14,.47,15.5,'plain','#4c5357');
+  }
+  const fx=FURNACE.x,fz=FURNACE.z;
+  for(let i=0;i<7;i++){
+   let xx=fx-1.15+i*.385;
+   m.box(xx,1.13,fz+1.475,.095,.90,.072,'plain','#aa9c85');
+   m.box(xx,1.13,fz+1.51,.023,.85,.035,'plain','black');
+  }
+  for(let i=0;i<4;i++){
+   m.box(fx-1.08+i*.72,2.21,fz+1.39,.14,.17,.14,'plain','#9b9a91');
+   m.sphere(fx-1.08+i*.72,2.21,fz+1.49,.077,'plain',i%2?'gold':'red2',.17,5,7);
+  }
+  m.box(fx,2.43,fz+1.36,2.74,.12,.22,'plain','#b0a89b');
+  m.box(fx,1.76,fz+1.36,2.8,.065,.20,'plain','#9f998e');
+  m.box(fx,.29,fz+1.35,2.65,.34,.33,'plain','#3e4146');
+  m.box(fx,3.22,fz-.70,.85,.28,.76,'plain','#979b98');
+  for(let i=0;i<6;i++)m.box(24.6+i*.85,.62,11.8,.72,1.2,.55,'wood','#7b624c');
+  // Safety-oriented: furnace remains only a fictional puzzle, no real-world operating steps.
+  return;
+ }
+ // A coffered ceiling treatment in long circulation rooms.
+ const halls=upper?[[17.5,8],[17.5,20]]:[[17.5,8],[17.5,20]];
+ for(const [cx,cz] of halls){
+  for(let i=-2;i<=2;i++)m.box(cx+i*.85,3.70,cz, .062,.09,5.0,'plain',trim);
+  for(let i=-2;i<=2;i++)m.box(cx,3.69,cz+i*.95,5.0,.09,.060,'plain',trim);
+ }
+ // Picture rails, framed art and shallow radiator details, all close to walls.
+ const art=upper?[[3.0,10.8],[32.8,10.5],[3.2,23.8],[32.8,22.8]]:[[3.0,8.9],[32.8,8.9],[3.2,22.8],[32.8,23.1]];
+ for(const [x,z] of art){
+  m.box(x,2.31,z,.11,1.32,1.22,'plain',oak);
+  m.box(x+(.13),2.31,z,.045,1.08,1.03,'plain','gold');
+  m.box(x+.159,2.31,z,.030,.94,.89,'painting','cream');
+  m.box(x,0.79,z,.20,1.21,1.0,'plain',trim);
+  for(let i=0;i<7;i++)m.box(x+.12,.79,z-.43+i*.143,.06,.95,.055,'plain','cream');
+ }
+ // Windows gain deep sills, side curtains and warm-colored fabric valances.
+ for(const [axis,pos,centers] of [['z',1.12,[5.0,17.5,29]],['z',26.82,[5.5,29.5]],['x',1.13,[4.5,10.5,18.5,24]],['x',34.84,[4.5,10.5,18.5,24]]]){
+  for(const c of centers){
+   const isX=axis==='x';
+   let px=isX?pos:c,pz=isX?c:pos;
+   m.box(px,3.36,pz,isX?.22:2.8,.16,isX?2.8:.22,'plain',oak);
+   const curtainColor=upper?'#b9a5ae':'#9b584c';
+   for(const delta of [-1.22,1.22]){
+    const xx=isX?px:px+delta,zz=isX?pz+delta:pz;
+    m.box(xx,2.22,zz,isX?.12:.27,1.97,isX?.27:.12,'plain',curtainColor);
+    m.box(xx,1.29,zz,isX?.17:.24,.065,isX?.23:.17,'plain',trim);
+   }
+   m.box(px,3.27,pz,isX?.28:2.64,.27,isX?2.64:.28,'plain',curtainColor);
+  }
+ }
+ // Filled out living room/study with lamps, curtains, throws and detailed tables.
+ if(!upper){
+  // Pillow covers and upholstered seams on the living-room couches.
+  for(const [cx,cz,w] of [[8.4,22.9,2.9],[8.5,17.0,2.1]]){
+   for(let i=-1;i<=1;i++){
+    const xx=cx+i*(w/3.7);
+    m.box(xx,1.20,cz+.25,w/4.0,.29,.095,'plain',i===0?'#b79d68':'#785b45');
+    m.box(xx,.96,cz-.42,w/4.2,.08,.25,'plain','cream');
+   }
+   m.box(cx,.43,cz-.59,w*.80,.085,.12,'plain',oak);
+  }
+  // Kitchen refrigerator, oven controls, farmhouse sink and framed upper cupboards.
+  m.box(33.0,1.2,3.23,1.45,2.42,.78,'plain','#dcd9cd');
+  m.box(32.25,1.14,3.68,.06,.83,.12,'plain','#8b8f8c');
+  m.box(32.25,1.99,3.68,.06,.39,.12,'plain','#8b8f8c');
+  m.box(26.15,1.94,1.93,1.28,.092,.58,'plain','#d4dbda');
+  m.box(26.15,1.99,1.93,.88,.055,.33,'plain','#6e777d');
+  m.box(26.12,2.19,2.15,.05,.44,.065,'plain','#aaa9a1');
+  m.box(26.12,2.40,2.10,.3,.05,.11,'plain','#aaa9a1');
+  m.box(30.8,.97,1.95,1.45,.20,.12,'plain','#3f464c');
+  for(const x of [30.3,30.8,31.3])m.sphere(x,1.09,2.025,.073,'plain','bronze',.18,5,7);
+  for(let x=26.0;x<33;x+=1.5)for(const y of [2.72,3.05])m.box(x,y,1.84,1.18,.055,.06,'plain','#8a673e');
+  // Dining chairs around the table, deliberately non-blocking as tiny props.
+  for(const [x,z] of [[27.8,6.82],[30.4,6.82],[27.8,9.83],[30.4,9.83]]){
+   m.box(x,.54,z,.67,.12,.60,'wood','#704a31');
+   m.box(x,1.05,z+(z<8?- .27:.27),.68,.95,.13,'wood','#815c3f');
+   for(const dx of [-.26,.26])m.box(x+dx,.26,z,.078,.50,.075,'wood','#5a392b');
+  }
+  // Layered mantel: stone hearth, logs, wrought-iron tools and floral garland.
+  m.box(2.12,.14,20.0,1.15,.28,4.1,'marble','cream');
+  for(let q=0;q<5;q++){
+   m.box(2.16,.38,19.25+q*.38,.23,.13,.53,'wood','#4a2d22');
+   m.sphere(2.21,2.74,18.7+q*.64,.10,'plain',q%2?'red2':'darkgreen',.10,5,7);
+  }
+  for(let z of [18.6,21.2])m.box(2.65,1.0,z,.06,1.7,.07,'plain','#272525');
+  // Writing desk: blotter, books and a shaded lamp with visible brass stem.
+  m.box(28.15,1.086,20.8,1.8,.028,.95,'plain','#2f6047');
+  for(let i=0;i<3;i++)m.box(27.2+i*.36,1.14,20.41,.34,.06,.58,'plain',['#91493a','#dbcca0','#456184'][i]);
+  m.box(28.8,1.36,20.8,.09,.55,.08,'plain','gold');
+  // Rugs bordered with stitched binding.
+  for(const [x,z,w,d] of [[6,20.4,8.6,9],[17.4,21,7,7],[18,6.5,6,8],[29,20,7.6,8]]){
+   for(const a of [-1,1]){
+    m.box(x+a*w*.49,.037,z,.055,.014,d*.97,'plain','#b89d67');
+    m.box(x,.037,z+a*d*.49,w*.97,.014,.055,'plain','#b89d67');
+   }
+  }
+ }else{
+  // Bedrooms: headboards, quilts, nightstands, pillows and lamps.
+  for(const [bx,bz] of [[6,4.8],[29.8,9.7],[4.2,23.0]]){
+   m.box(bx,1.35,bz-2.17,3.22,.96,.18,'wood',oak);
+   for(let i=-1;i<=1;i++)m.box(bx+i*.86,1.32,bz-2.04,.68,.68,.055,'plain',trim);
+   m.box(bx,.80,bz+.58,2.7,.065,3.0,'plain','#b5a49e');
+   m.box(bx,.88,bz-1.27,2.62,.13,.74,'plain','cream');
+   const nx=bx+2.18,nz=bz-1.57;
+   m.box(nx,.53,nz,.75,1.04,.70,'wood',oak);
+   m.box(nx,1.08,nz,.83,.10,.74,'wood',trim);
+   m.box(nx,1.25,nz,.12,.38,.12,'plain','gold');
+   m.cone(nx,1.49,nz,.37,.34,'plain','cream',.20,12,.26);
+  }
+  // Attic storage becomes actual shelving with trunks and folded quilts.
+  for(let i=0;i<4;i++){
+   const x=25.2+i*1.8,z=18.0;
+   m.box(x,1.15,z,1.40,2.25,.52,'wood',oak);
+   for(let j=0;j<3;j++)m.box(x,.47+j*.68,z,1.31,.11,.60,'wood',trim);
+   for(let k=0;k<4;k++)m.box(x-.45+k*.28,.67,z,.23,.29,.36,'plain',['#9d5445','#557183','#af915c','#6c816e'][k]);
+  }
+  for(let i=0;i<4;i++){
+   m.box(27+i*1.15,.56,24.9,.96,1.07,.71,'wood','#805b3b');
+   m.box(27+i*1.15,1.12,24.9,1.02,.11,.75,'plain','#b4925e');
+   m.box(27+i*1.15,.59,25.28,.09,.82,.06,'plain','bronze');
+  }
+ }
+}
+
 function buildSideFloor(level){
  generateMap();
  props=[];
@@ -589,6 +747,7 @@ function buildSideFloor(level){
  if(upstairs) dressUpstairs(m);
  else dressBasement(m);
  dressStairs(m);
+ dressArchitecturalRealism(m,level);
  if(!fallback)modelBuffer=uploadMesh(m);
 }
 
@@ -794,7 +953,7 @@ function buildHouse(){
   let y=rand(3.15,3.45);m.sphere(x,y,z,.025,'plain',Math.random()<.5?'gold':'red2',.75,4,6);
  }
  // Collectables/station marker models get animated in drawDynamic() each frame.
- dressStairs(m);if(!fallback)modelBuffer=uploadMesh(m);
+ dressStairs(m);dressArchitecturalRealism(m,1);if(!fallback)modelBuffer=uploadMesh(m);
 }
 function dressHouse(m){
  // The front door, wreath and stairs give the player a recognizable starting landmark.
